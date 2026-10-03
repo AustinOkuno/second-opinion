@@ -6,3 +6,7 @@ class ScamDetector:
         # Implement the logic to detect scams based on the request
         # For now, we'll return a placeholder response
         return CheckResult(verdict=Verdict.SAFE, reason="Placeholder reason", text=txt)
+
+    def detect_image(self, image: bytes, media_type: str) -> CheckResult:
+      # hard-coded CheckResult, like the text fake
+         return CheckResult(verdict=Verdict.SUSPICIOUS, reason="Image analysis not implemented yet")
