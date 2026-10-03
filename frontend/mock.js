@@ -5,8 +5,8 @@
  * shape the real backend should return, so the UI is tested the same way.
  * Safe to delete once the backend is reliable.
  */
-window.MockChecker = (function () {
-  var RULES = [
+window.MockChecker = (() => {
+  const RULES = [
     { tag: "giftcard", w: 3, re: /gift ?cards?|itunes card|google play card|steam card/gi,
       why: "Only scammers ask to be paid in gift cards. Real companies and government offices never do." },
     { tag: "money", w: 3, re: /wire (?:the )?(?:money|transfer)|western union|moneygram|bitcoin|crypto(?:currency)?|zelle|cash ?app/gi,
@@ -33,41 +33,67 @@ window.MockChecker = (function () {
       why: "A link in a message you didn't ask for can lead to a fake website. Don't tap it." }
   ];
 
+  const SCREENSHOT_EXAMPLE = "Notice: Your package could not be delivered. Pay a small redelivery fee within 24 hours: http://usps-redeliver.top/pay";
+  const SCREENSHOT_NOTE = "Demo mode: screenshots are not read yet. This result uses an example message.";
+
+  function match(text) {
+    const reasons = [], tags = {};
+    let score = 0;
+    for (const r of RULES) {
+      const m = text.match(r.re);
+      if (!m) continue;
+      score += r.w;
+      tags[r.tag] = true;
+      reasons.push({ quote: m[0].trim().slice(0, 70), why: r.why });
+    }
+    return { score, tags, reasons };
+  }
+
+  function stepsFor(verdict, tags) {
+    if (verdict === "safe") return [];
+    const steps = [verdict === "scam"
+      ? "Don't tap any link or call any number in this message."
+      : "Don't tap links or call numbers in this message yet."];
+    if (tags.giftcard || tags.money) steps.push("Do not send money, gift cards, or codes. Stop here.");
+    if (tags.trouble) steps.push("Hang up. Call your grandchild or relative on the number you already have.");
+    else if (tags.account) steps.push("Call your bank using the number on the back of your card.");
+    else if (tags.gov) steps.push("Look up the agency's real number yourself. Don't use one from this message.");
+    else if (tags.package) steps.push("Check the order on the store's own website or app.");
+    else steps.push("If you think it might be real, contact the company using a number you already trust.");
+    steps.push("Show this to someone you trust. Anyone can be fooled, and checking is smart.");
+    return steps;
+  }
+
+  function summaryFor(verdict, n) {
+    if (verdict === "scam") return `This message has ${n} classic scam warning sign${n === 1 ? "" : "s"}.`;
+    if (verdict === "suspicious") return `This has ${n === 1 ? "one warning sign" : n + " warning signs"}. Check it carefully before you do anything.`;
+    return "We didn't find the usual scam warning signs in this message.";
+  }
+
+  function confidenceFor(verdict, score) {
+    if (verdict === "scam") return score >= 6 ? "high" : "medium";
+    if (verdict === "suspicious") return "low";
+    return "";
+  }
+
   function analyze(text, image) {
-    var note = "";
+    let note = "";
     if (!text && image) {
-      text = "Notice: Your package could not be delivered. Pay a small redelivery fee within 24 hours: http://usps-redeliver.top/pay";
-      note = "Demo mode: screenshots are not read yet. This result uses an example message.";
+      text = SCREENSHOT_EXAMPLE;
+      note = SCREENSHOT_NOTE;
     }
-    var reasons = [], score = 0, tags = {};
-    RULES.forEach(function (r) {
-      var m = text.match(r.re);
-      if (m) { score += r.w; tags[r.tag] = true; reasons.push({ quote: m[0].trim().slice(0, 70), why: r.why }); }
-    });
-    var verdict = score >= 4 ? "scam" : score >= 1 ? "suspicious" : "safe";
-    var n = reasons.length;
-    var steps = [];
-    if (verdict !== "safe") {
-      steps.push(verdict === "scam" ? "Don't tap any link or call any number in this message." : "Don't tap links or call numbers in this message yet.");
-      if (tags.giftcard || tags.money) steps.push("Do not send money, gift cards, or codes. Stop here.");
-      if (tags.trouble) steps.push("Hang up. Call your grandchild or relative on the number you already have.");
-      else if (tags.account) steps.push("Call your bank using the number on the back of your card.");
-      else if (tags.gov) steps.push("Look up the agency's real number yourself. Don't use one from this message.");
-      else if (tags.package) steps.push("Check the order on the store's own website or app.");
-      else steps.push("If you think it might be real, contact the company using a number you already trust.");
-      steps.push("Show this to someone you trust. Anyone can be fooled, and checking is smart.");
-    }
+    const { score, tags, reasons } = match(text);
+    const verdict = score >= 4 ? "scam" : score >= 1 ? "suspicious" : "safe";
+    const steps = stepsFor(verdict, tags);
     return {
-      verdict: verdict,
-      confidence: verdict === "scam" ? (score >= 6 ? "high" : "medium") : verdict === "suspicious" ? "low" : "",
-      summary: verdict === "scam" ? "This message has " + n + " classic scam warning sign" + (n === 1 ? "" : "s") + "."
-        : verdict === "suspicious" ? "This has " + (n === 1 ? "one warning sign" : n + " warning signs") + ". Check it carefully before you do anything."
-        : "We didn't find the usual scam warning signs in this message.",
-      reasons: reasons,
+      verdict,
+      confidence: confidenceFor(verdict, score),
+      summary: summaryFor(verdict, reasons.length),
+      reasons,
       next_steps: steps.length ? steps : undefined,
-      note: note
+      note
     };
   }
 
-  return { analyze: analyze };
+  return { analyze };
 })();

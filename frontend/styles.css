@@ -67,6 +67,11 @@ svg.i { width: 1.25rem; height: 1.25rem; flex: none; }
 }
 .brand { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 1.1rem; min-width: 0; }
 .brand svg { width: 1.6rem; height: 1.6rem; color: var(--brand); flex: none; }
+.brand span, .seg button { white-space: nowrap; }
+.badge {
+  display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 999px;
+  font-size: .75rem; font-weight: 700; background: var(--warn-bg); color: var(--warn); white-space: nowrap;
+}
 .seg { display: inline-flex; padding: 4px; gap: 4px; background: var(--hover); border-radius: 999px; }
 .seg button {
   display: inline-flex; align-items: center; gap: 8px; border: 0; background: transparent;
@@ -95,7 +100,8 @@ body.mode-call .chat-only { display: none !important; }
 body:not(.mode-call) .call-only { display: none !important; }
 
 .hero { text-align: center; margin-bottom: 28px; }
-.hero h1 { font-size: clamp(1.7rem, 5vw, 2.2rem); font-weight: 400; line-height: 1.2; letter-spacing: -.01em; margin: 0 0 10px; text-wrap: balance; }
+.hero h1, .call-view h1 { font-size: clamp(1.7rem, 5vw, 2.2rem); font-weight: 400; line-height: 1.2; margin: 0 0 10px; text-wrap: balance; }
+.hero h1 { letter-spacing: -.01em; }
 .hero p { margin: 0 auto; color: var(--muted); max-width: 30rem; text-wrap: pretty; }
 
 /* Composer */
@@ -124,6 +130,7 @@ body.started .dock { position: sticky; bottom: 0; padding-block: 18px 14px; back
 }
 .send:hover { filter: brightness(1.08); }
 .send svg { width: 1.2rem; height: 1.2rem; }
+.composer.busy .send { opacity: .6; pointer-events: none; }
 .attach { display: none; align-items: center; gap: 10px; padding: 6px; margin: 0 0 6px; border-radius: 20px; background: var(--user-bg); }
 .attach.on { display: flex; }
 .attach img { width: 3rem; height: 3rem; object-fit: cover; border-radius: 14px; }
@@ -184,10 +191,13 @@ details summary { cursor: pointer; font-weight: 700; color: var(--brand); min-he
 .actions { display: flex; flex-wrap: wrap; gap: 10px; }
 .report { padding: 14px 22px 18px; border-top: 1px solid var(--line); font-size: .9rem; color: var(--muted); }
 .report a { color: var(--brand); font-weight: 700; }
+.error-card { background: var(--surface); border: 1px solid var(--scam); border-radius: 22px; padding: 18px 22px; }
+.error-card b { display: block; color: var(--scam); font-size: 1.15rem; margin-bottom: 4px; }
+.error-card p { margin: 0 0 12px; }
 
 /* ---------- Call mode ---------- */
 .call-view { padding-block: 8px 24px; }
-.call-view h1 { text-align: center; font-size: clamp(1.7rem, 5vw, 2.2rem); font-weight: 400; line-height: 1.2; margin: 0 0 10px; text-wrap: balance; }
+.call-view h1 { text-align: center; }
 .call-view > p { text-align: center; color: var(--muted); margin: 0 auto 22px; max-width: 30rem; }
 .checks { display: grid; gap: 10px; margin-bottom: 16px; }
 .checks label { display: flex; gap: 14px; align-items: center; padding: 14px 16px; border: 1px solid var(--line); background: var(--surface); border-radius: 18px; cursor: pointer; min-height: 60px; }
@@ -207,8 +217,12 @@ details summary { cursor: pointer; font-weight: 700; color: var(--brand); min-he
 
 @media (max-width: 640px) {
   .top { grid-template-columns: 1fr auto; grid-template-areas: "brand right" "seg seg"; }
-  .brand { grid-area: brand; } .right { grid-area: right; } .seg { grid-area: seg; justify-self: center; }
-  .seg button { padding: 6px 16px; }
+  .brand { grid-area: brand; font-size: 1rem; }
+  .right { grid-area: right; }
+  .seg { grid-area: seg; justify-self: center; width: 100%; }
+  .seg button { flex: 1; justify-content: center; padding: 6px 10px; font-size: .9rem; }
+  .seg button svg { display: none; }
+  .sizes button { min-width: 36px; }
   .ghost .lbl { display: none; }
   .avatar { display: none; }
   .you { max-width: 100%; }
@@ -218,22 +232,4 @@ details summary { cursor: pointer; font-weight: 700; color: var(--brand); min-he
 @media (prefers-reduced-motion: reduce) {
   .dots i { animation: none; opacity: 1; }
   .toast { transition: none; }
-}
-
-/* ---------- Added for the project version ---------- */
-.badge {
-  display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 999px;
-  font-size: .75rem; font-weight: 700; background: var(--warn-bg); color: var(--warn); white-space: nowrap;
-}
-.error-card { background: var(--surface); border: 1px solid var(--scam); border-radius: 22px; padding: 18px 22px; }
-.error-card b { display: block; color: var(--scam); font-size: 1.15rem; margin-bottom: 4px; }
-.error-card p { margin: 0 0 12px; }
-.composer.busy .send { opacity: .6; pointer-events: none; }
-.brand span, .seg button { white-space: nowrap; }
-@media (max-width: 640px) {
-  .brand { font-size: 1rem; }
-  .seg { width: 100%; }
-  .seg button { flex: 1; justify-content: center; padding: 6px 10px; font-size: .9rem; }
-  .seg button svg { display: none; }
-  .sizes button { min-width: 36px; }
 }
