@@ -1,17 +1,26 @@
-from detector import ScamDetector
-from fastapi import FastAPI, HTTPException
-from models import Verdict, CheckRequest, CheckResult
 import logging
+
+from dotenv import load_dotenv
+load_dotenv()  # loads ANTHROPIC_API_KEY from backend/.env
+
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import UploadFile
 
 ALLOWED_IMAGE_TYPES = {"image/png", "image/jpeg", "image/webp"}
 MAX_IMAGE_BYTES = 5 * 1024 * 1024  # 5 MB
+from detector import ScamDetector
+from models import CheckRequest, CheckResult
+
+logger = logging.getLogger(__name__)
 
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://127.0.0.1:5500"],
+    allow_origins=[
+        "http://127.0.0.1:5500", "http://localhost:5500",   # VS Code Live Server
+        "http://127.0.0.1:5173", "http://localhost:5173",   # Vite
+    ],
     allow_methods=["GET", "POST"],
     allow_headers=["Content-Type"],
 )
@@ -25,11 +34,9 @@ def read_root():
 
 @app.post("/check")
 def check_scam(request: CheckRequest) -> CheckResult:
-    # Placeholder implementation - replace with actual scam detection logic
     try:
-        return detector.detect(request.text)
+        return detector.detect(request.text, request.image, request.media_type)
     except Exception:
-        logger = logging.getLogger(__name__)
         logger.exception("Detector failed")
         raise HTTPException(status_code=503, detail="Please try again later. The detector is currently unavailable.")
 
