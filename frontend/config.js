@@ -6,12 +6,12 @@
  */
 window.SO_CONFIG = {
   // Where the backend lives. Change this if your teammate runs it on another port or deploys it.
-  API_URL: "http://localhost:8000/api/analyze",
+  API_URL: "http://localhost:8000/check",
 
   // true  = use the built-in fake checker (works with no backend, good for designing the UI)
   // false = send every message to API_URL
   // You can also force it from the address bar: index.html?mock=1 or index.html?mock=0
-  USE_MOCK: true,
+  USE_MOCK: false,
 
   // Give up waiting for the backend after this many milliseconds (LLMs can be slow).
   TIMEOUT_MS: 45000,
