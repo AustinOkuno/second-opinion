@@ -1,12 +1,109 @@
 /*
  * Second Opinion – page behavior
  * ------------------------------------------------------------
- * Handles the chat UI. It never talks to the backend directly;
- * it calls SecondOpinionAPI.check({ text, image }) from api.js.
+ * Handles the chat UI. The only code that talks to the backend is the
+ * "Backend connector" section right below; the rest calls API.check().
  */
 (function () {
-  var cfg = window.SO_CONFIG;
-  var API = window.SecondOpinionAPI;
+  /* ---------- Settings ---------- */
+  var cfg = {
+    // Where the backend (backend/main.py) runs. Start it with: uvicorn main:app --reload
+    API_URL: "http://localhost:8000/check",
+    // Give up waiting after this many milliseconds (the AI can be slow).
+    TIMEOUT_MS: 45000,
+    // Print requests and responses in the browser console (F12).
+    DEBUG: true
+  };
+
+  /* ---------- Backend connector ----------
+   * Request  (POST JSON, matches CheckRequest in backend/models.py):
+   *   { "text": "...", "image": "<base64, no data: prefix>" | null, "media_type": "image/png" }
+   * Response (matches CheckResult):
+   *   { "verdict": "likely_scam" | "suspicious" | "no_red_flags_found" | "cannot_tell",
+   *     "summary": "...", "red_flags": [{ "quote", "why" }], "next_steps": ["..."], "used_ai": bool }
+   */
+  var API = (function () {
+    // Image types the AI can read, and its 5 MB size limit.
+    var IMAGE_TYPES = ["image/png", "image/jpeg", "image/webp", "image/gif"];
+    var MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+
+    function log() { if (cfg.DEBUG) console.log.apply(console, ["[Second Opinion]"].concat([].slice.call(arguments))); }
+
+    function CheckError(kind, detail, status) {
+      this.kind = kind;          // "network" | "timeout" | "server" | "bad-image" | "bad-response"
+      this.detail = detail;
+      this.status = status;
+    }
+
+    function toBase64(f) {
+      return new Promise(function (resolve, reject) {
+        var r = new FileReader();
+        r.onload = function () { resolve(String(r.result).split(",")[1]); };   // drop "data:image/png;base64,"
+        r.onerror = function () { reject(r.error); };
+        r.readAsDataURL(f);
+      });
+    }
+
+    async function check(opts) {
+      var text = opts.text || "", image = opts.image || null;
+      var payload = { text: text, image: null, media_type: "image/png" };
+      if (image) {
+        if (IMAGE_TYPES.indexOf(image.type) < 0 || image.size > MAX_IMAGE_BYTES) throw new CheckError("bad-image");
+        payload.image = await toBase64(image);
+        payload.media_type = image.type;
+      }
+
+      var ctrl = new AbortController();
+      var timer = setTimeout(function () { ctrl.abort(); }, cfg.TIMEOUT_MS);
+      var res;
+      log("POST", cfg.API_URL, { text: text, image: image && image.name });
+      try {
+        res = await fetch(cfg.API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+          signal: ctrl.signal
+        });
+      } catch (e) {
+        throw new CheckError(e.name === "AbortError" ? "timeout" : "network", String(e));
+      } finally {
+        clearTimeout(timer);
+      }
+
+      if (!res.ok) {
+        var detail = await res.text().catch(function () { return ""; });
+        log("server error", res.status, detail);
+        throw new CheckError("server", detail, res.status);
+      }
+      var data;
+      try { data = await res.json(); } catch (e) { throw new CheckError("bad-response", "Response was not JSON"); }
+      log("response", data);
+      return normalize(data, text);
+    }
+
+    // Backend verdict -> the three looks the page has (scam / suspicious / ok).
+    var VERDICTS = { likely_scam: "scam", suspicious: "suspicious", no_red_flags_found: "ok", cannot_tell: "suspicious" };
+
+    function normalize(d, text) {
+      if (!d || !VERDICTS[d.verdict] || !d.summary) throw new CheckError("bad-response", JSON.stringify(d));
+      var verdict = VERDICTS[d.verdict];
+      var notes = [];
+      if (d.verdict === "cannot_tell") notes.push("We couldn't fully check this message, so treat it with care.");
+      if (!d.used_ai) notes.push("Our AI checker wasn't available, so this answer comes from our basic safety checks only.");
+      return {
+        verdict: verdict,
+        summary: d.summary,
+        sure: verdict === "ok" ? "This is not a guarantee. If it later asks for money or personal details, check again." : "",
+        reasons: (d.red_flags || []).filter(function (r) { return r && (r.quote || r.why); }),
+        steps: d.next_steps || [],
+        note: notes.join(" "),
+        text: text
+      };
+    }
+
+    return { check: check, CheckError: CheckError };
+  })();
+
   var $ = function (id) { return document.getElementById(id); };
   var body = document.body, stage = $("stage"), stream = $("stream");
   var msg = $("msg"), form = $("form"), hint = $("hint");
@@ -19,15 +116,6 @@
     return String(s).replace(/[&<>"']/g, function (c) {
       return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
     });
-  }
-
-  /* ---------- Demo-mode badge so the team always knows what's answering ---------- */
-  if (cfg.USE_MOCK) {
-    var badge = document.createElement("span");
-    badge.className = "badge";
-    badge.textContent = "Demo mode";
-    badge.title = "Answers come from the built-in fake checker. Set USE_MOCK to false in config.js to use the backend.";
-    document.querySelector(".brand").appendChild(badge);
   }
 
   /* ---------- Modes ---------- */
@@ -104,7 +192,7 @@
       '<div class="verdict"><svg aria-hidden="true"><use href="#' + v.icon + '"/></svg><div>' +
         '<p class="v-label">' + v.label + "</p>" +
         '<p class="v-sub">' + esc(a.summary) + "</p>" +
-        '<p class="v-sure">How sure we are: ' + esc(a.sure) + "</p></div></div>" +
+        (a.sure ? '<p class="v-sure">' + esc(a.sure) + "</p>" : "") + "</div></div>" +
       '<section class="do"><h3>What to do now</h3><ol>' + a.steps.map(function (s) { return "<li>" + esc(s) + "</li>"; }).join("") + "</ol></section>" +
       "<section><h3>Why we think so</h3>" + reasons + "</section>" +
       (marked ? '<details><summary>See your message with the warnings marked</summary><div class="marked">' + marked + "</div></details>" : "") +
@@ -123,7 +211,8 @@
     network: ["We couldn't reach the checker.", "Check your internet connection and try again."],
     timeout: ["This is taking too long.", "The checker didn't answer in time. Please try again."],
     server: ["Something went wrong on our side.", "Please try again in a moment."],
-    "bad-response": ["We got an answer we couldn't read.", "Please try again in a moment."]
+    "bad-response": ["We got an answer we couldn't read.", "Please try again in a moment."],
+    "bad-image": ["We can't read that picture.", "Please use a PNG, JPG, WEBP, or GIF screenshot smaller than 5 MB."]
   };
   function renderError(err, retry) {
     var e = ERRORS[err.kind] || ERRORS.server;

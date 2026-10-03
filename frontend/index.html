@@ -65,7 +65,7 @@
         <button type="button" class="link-btn" id="newBtn" hidden><svg aria-hidden="true"><use href="#i-new"/></svg><span>Clear</span></button>
         <span class="count" id="count" aria-live="off">0 / 5,000 characters</span>
       </div>
-      <input type="file" id="file" accept="image/*" hidden>
+      <input type="file" id="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden>
     </form>
 
     <!-- Call checklist -->
@@ -93,10 +93,6 @@
 <div class="drop" id="drop" aria-hidden="true">Drop your screenshot here</div>
 <div class="toast" id="toast" role="status"></div>
 
-<!-- Load order matters: config -> mock -> api -> app -->
-<script src="config.js"></script>
-<script src="mock.js"></script>
-<script src="api.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
