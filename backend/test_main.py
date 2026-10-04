@@ -1,9 +1,19 @@
+import pytest
 from fastapi.testclient import TestClient
-from main import app
+
 import main
 from main import app, MAX_IMAGE_BYTES
 
 client = TestClient(app)
+
+VALID_VERDICTS = {"likely_scam", "suspicious", "no_red_flags_found", "cannot_tell"}
+
+
+# Keep tests offline: never call the real AI (free, fast, same result every time).
+@pytest.fixture(autouse=True)
+def no_ai(monkeypatch):
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+
 
 def test_root():
     response = client.get("/")
@@ -15,7 +25,7 @@ def test_valid_message():
     response = client.post("/check", json={"text": "You have won a free prize, click here"})
     assert response.status_code == 200
     body = response.json()
-    assert body["verdict"] in ["safe", "scam", "suspicious"]
+    assert body["verdict"] in VALID_VERDICTS
     assert body["reason"] != ""
 
 #empty message tests
@@ -39,9 +49,9 @@ def test_missing_text_field():
     response = client.post("/check", json={})
     assert response.status_code == 422
 
-#if text dectector fails, it should return 503
+#if text detector fails, it should return 503
 def test_detector_failure(monkeypatch):
-    def broken(txt):
+    def broken(*args, **kwargs):
         raise RuntimeError("boom")
     monkeypatch.setattr(main.detector, "detect", broken)
     response = client.post("/check", json={"text": "This is a test message"})
@@ -56,7 +66,7 @@ def test_valid_image():
     )
     assert response.status_code == 200
     body = response.json()
-    assert body["verdict"] in ["safe", "scam", "suspicious"]
+    assert body["verdict"] in VALID_VERDICTS
     assert body["reason"] != ""
 
 #empty image test
@@ -88,7 +98,7 @@ def test_large_image():
     assert response.json() == {"detail": "Image file is too large. Maximum size is 5 MB."}
 
 def test_image_detector_failure(monkeypatch):
-    def broken(image_bytes, media_type):
+    def broken(*args, **kwargs):
         raise RuntimeError("boom")
     monkeypatch.setattr(main.detector, "detect_image", broken)
     response = client.post(
