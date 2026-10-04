@@ -4,13 +4,15 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Second Opinion</title>
-  <meta name="description" content="Paste a suspicious text, email, or voicemail and get a plain-language answer: is it a scam, why, and what to do next.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Cpath%20d%3D%22M11%2024L9%206l17%208z%22%20fill%3D%22%235B2A14%22%20stroke%3D%22%235B2A14%22%20stroke-width%3D%223%22%20stroke-linejoin%3D%22round%22/%3E%3Cpath%20d%3D%22M53%2024l2-18-17%208z%22%20fill%3D%22%235B2A14%22%20stroke%3D%22%235B2A14%22%20stroke-width%3D%223%22%20stroke-linejoin%3D%22round%22/%3E%3Cpath%20d%3D%22M13%2017l-1-7%208%204z%22%20fill%3D%22%23FFCAA1%22/%3E%3Cpath%20d%3D%22M51%2017l1-7-8%204z%22%20fill%3D%22%23FFCAA1%22/%3E%3Cpath%20d%3D%22M4%2033l7-14q21-12%2042%200l7%2014-9%2012Q32%2060%2013%2045z%22%20fill%3D%22%23E8541E%22/%3E%3Cpath%20d%3D%22M5%2033l12%204-3%208zM59%2033l-12%204%203%208z%22%20fill%3D%22%23FFCAA1%22/%3E%3Cpath%20d%3D%22M19%2041q13-9%2026%200-4%2012-13%2012t-13-12z%22%20fill%3D%22%23FFCAA1%22/%3E%3Cellipse%20cx%3D%2223%22%20cy%3D%2225%22%20rx%3D%224.500%22%20ry%3D%222.600%22%20fill%3D%22%23FFCAA1%22%20transform%3D%22rotate%28-15%2023%2025%29%22/%3E%3Cellipse%20cx%3D%2241%22%20cy%3D%2225%22%20rx%3D%224.500%22%20ry%3D%222.600%22%20fill%3D%22%23FFCAA1%22%20transform%3D%22rotate%2815%2041%2025%29%22/%3E%3Cpath%20d%3D%22M23%2033q-3%206%201%2011M41%2033q3%206-1%2011%22%20fill%3D%22none%22%20stroke%3D%22%237A2E12%22%20stroke-width%3D%222.600%22%20stroke-linecap%3D%22round%22/%3E%3Ccircle%20cx%3D%2223%22%20cy%3D%2231%22%20r%3D%222.700%22%20fill%3D%22%233A1A0E%22/%3E%3Ccircle%20cx%3D%2241%22%20cy%3D%2231%22%20r%3D%222.700%22%20fill%3D%22%233A1A0E%22/%3E%3Cellipse%20cx%3D%2232%22%20cy%3D%2242%22%20rx%3D%223.800%22%20ry%3D%222.800%22%20fill%3D%22%233A1A0E%22/%3E%3Cpath%20d%3D%22M32%2044.500v2.500M28.500%2047.500q3.500%202.500%207%200%22%20fill%3D%22none%22%20stroke%3D%22%233A1A0E%22%20stroke-width%3D%221.700%22%20stroke-linecap%3D%22round%22/%3E%3C/svg%3E">
+  <meta name="description" content="Paste a suspicious text or email and get a plain-language answer: is it a scam, why, and what to do next.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Lexend:wght@400;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
 </head>
-<body>
+<body data-mode="chat">
 
 <!-- Icons. Use one anywhere with: <svg><use href="#i-name"/></svg> -->
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -19,6 +21,10 @@
     <symbol id="i-stop" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M8.2 2.8h7.6l5.4 5.4v7.6l-5.4 5.4H8.2l-5.4-5.4V8.2z"/><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" d="M9 9l6 6M15 9l-6 6"/></symbol>
     <symbol id="i-warn" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M12 3.2l9.4 16.3H2.6z"/><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" d="M12 9.5v4.6M12 17.2v.1"/></symbol>
     <symbol id="i-ok" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.2" fill="none" stroke="currentColor" stroke-width="2"/><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" d="M7.6 12.4l3.1 3.1 5.7-6.4"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 7.5v5.5M12 16.4v.1" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></symbol>
+    <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5.5c3-1.2 5.500-1 8 .8 2.500-1.800 5-2 8-.8v13c-3-1.200-5.500-1-8 .8-2.500-1.800-5-2-8-.8z M12 6.300v13" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/></symbol>
+    <symbol id="i-access" viewBox="0 0 24 24"><circle cx="12" cy="4.500" r="2" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M5 9l7 1.500L19 9M12 10.500V15M9 21l3-6 3 6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-logo" viewBox="0 0 64 64"><path d="M11 24L9 6l17 8z" fill="#5B2A14" stroke="#5B2A14" stroke-width="3" stroke-linejoin="round"/><path d="M53 24l2-18-17 8z" fill="#5B2A14" stroke="#5B2A14" stroke-width="3" stroke-linejoin="round"/><path d="M13 17l-1-7 8 4z" fill="#FFCAA1"/><path d="M51 17l1-7-8 4z" fill="#FFCAA1"/><path d="M4 33l7-14q21-12 42 0l7 14-9 12Q32 60 13 45z" fill="#E8541E"/><path d="M5 33l12 4-3 8zM59 33l-12 4 3 8z" fill="#FFCAA1"/><path d="M19 41q13-9 26 0-4 12-13 12t-13-12z" fill="#FFCAA1"/><ellipse cx="23" cy="25" rx="4.500" ry="2.600" fill="#FFCAA1" transform="rotate(-15 23 25)"/><ellipse cx="41" cy="25" rx="4.500" ry="2.600" fill="#FFCAA1" transform="rotate(15 41 25)"/><path d="M23 33q-3 6 1 11M41 33q3 6-1 11" fill="none" stroke="#7A2E12" stroke-width="2.600" stroke-linecap="round"/><circle cx="23" cy="31" r="2.700" fill="#3A1A0E"/><circle cx="41" cy="31" r="2.700" fill="#3A1A0E"/><ellipse cx="32" cy="42" rx="3.800" ry="2.800" fill="#3A1A0E"/><path d="M32 44.500v2.500M28.500 47.500q3.500 2.500 7 0" fill="none" stroke="#3A1A0E" stroke-width="1.700" stroke-linecap="round"/></symbol>
     <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
     <symbol id="i-up" viewBox="0 0 24 24"><path d="M12 19V5M6 11l6-6 6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
     <symbol id="i-msg" viewBox="0 0 24 24"><path d="M4 5.5h16v10H9.5L5 19.5v-4H4z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M8 9.5h8M8 12.5h5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></symbol>
@@ -35,10 +41,10 @@
 
 <header class="masthead">
   <div class="topline">
-    <div class="brand"><svg aria-hidden="true"><use href="#i-shield"/></svg><span>Second Opinion</span></div>
+    <div class="brand"><svg class="logo" aria-hidden="true"><use href="#i-logo"/></svg><span>Second Opinion</span></div>
   </div>
   <h1>Is this message a scam? Get a second opinion.</h1>
-  <p class="sub">Paste a text, email, or voicemail below. We'll check it for scam warning signs and tell you what to do next.</p>
+  <p class="sub">Paste a text or email below. We'll check it for scam warning signs and tell you what to do next.</p>
 </header>
 
 <main class="stage" id="stage">
@@ -47,13 +53,15 @@
     <!-- Left tool rail (becomes tabs on phones) -->
     <nav class="seg rail" aria-label="Tools">
       <button type="button" data-mode="chat" aria-pressed="true"><svg aria-hidden="true"><use href="#i-msg"/></svg><span>Check a message</span></button>
-      <button type="button" data-mode="call" aria-pressed="false"><svg aria-hidden="true"><use href="#i-phone"/></svg><span>On a call</span></button>
+      <button type="button" data-mode="guide" aria-pressed="false"><svg aria-hidden="true"><use href="#i-book"/></svg><span>How to use</span></button>
+      <button type="button" data-mode="access" aria-pressed="false"><svg aria-hidden="true"><use href="#i-access"/></svg><span>Accessibility</span></button>
     </nav>
 
     <!-- Message checker -->
     <form class="card chat-only" id="form" autocomplete="off">
       <label for="msg" class="sr-only">Message to check</label>
-      <textarea id="msg" maxlength="5000" placeholder="Paste the text, email, or voicemail you want to check here…"></textarea>
+      <div class="field"><textarea id="msg" maxlength="5000" placeholder="Paste the text or email you want to check here…"></textarea>
+        <div class="greet" aria-hidden="true"><img id="greetImg" alt=""><p class="bubble">Hi, I'm Scampy! Paste a message you're unsure about and I'll help you check it.</p></div></div>
       <div class="attach" id="attach">
         <img id="attachImg" alt="">
         <span id="attachName"></span>
@@ -65,22 +73,28 @@
         <button type="button" class="link-btn" id="newBtn" hidden><svg aria-hidden="true"><use href="#i-new"/></svg><span>Clear</span></button>
         <span class="count" id="count" aria-live="off">0 / 5,000 characters</span>
       </div>
-      <input type="file" id="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden>
+      <input type="file" id="file" accept="image/*" hidden>
     </form>
 
-    <!-- Call checklist -->
-    <section class="card call-view call-only" aria-labelledby="callTitle">
-      <h2 id="callTitle">Is this call a scam?</h2>
-      <p>Tap anything that is true right now. You can keep the phone to your ear.</p>
-      <div class="checks" id="checks">
-        <label><input type="checkbox" id="c1"><span>They called me and I wasn't expecting it</span></label>
-        <label><input type="checkbox" id="c2"><span>They are rushing me or say I must act now</span></label>
-        <label><input type="checkbox" id="c3"><span>They want gift cards, a wire transfer, crypto, or cash</span></label>
-        <label><input type="checkbox" id="c4"><span>They want me to install something or use my computer</span></label>
-        <label><input type="checkbox" id="c5"><span>They told me to keep this a secret</span></label>
-        <label><input type="checkbox" id="c6"><span>They say a family member is in trouble</span></label>
-      </div>
-      <div class="call-result" id="callResult" aria-live="polite"></div>
+    <!-- How to use -->
+    <section class="card guide-view guide-only" aria-labelledby="guideTitle">
+      <h2 id="guideTitle">How to use Second Opinion</h2>
+      <p>Four quick steps. It takes about a minute.</p>
+      <ol class="guide"><li><div class="gimg"><svg viewBox="0 0 160 100" role="img" aria-label="Copy the message"><rect class="g-s" x="52" y="6" width="56" height="88" rx="10"/><rect class="g-a" x="60" y="22" width="40" height="30" rx="8"/><path class="g-l" d="M66 32h28M66 40h18"/><rect class="g-b" x="64" y="62" width="32" height="14" rx="7"/><path class="g-w" d="M71 69h18"/></svg></div><div><h3>Copy the message</h3><p>Press and hold the text or email on your phone or computer, then choose Copy. Do not tap any links in it.</p></div></li><li><div class="gimg"><svg viewBox="0 0 160 100" role="img" aria-label="Paste it, or add a screenshot"><rect class="g-s" x="14" y="10" width="132" height="80" rx="10"/><path class="g-l" d="M28 28h70M28 38h92M28 48h40"/><rect class="g-a" x="100" y="58" width="32" height="24" rx="5"/><path class="g-l" d="M106 76l8-8 6 5 5-4 5 7"/><rect class="g-b" x="26" y="66" width="50" height="14" rx="7"/></svg></div><div><h3>Paste it, or add a screenshot</h3><p>Paste into the big box on the Check a message tab. You can also press Upload screenshot or drop a picture in.</p></div></li><li><div class="gimg"><svg viewBox="0 0 160 100" role="img" aria-label="Press Check message"><rect class="g-s" x="14" y="10" width="132" height="80" rx="10"/><rect class="g-b" x="30" y="36" width="100" height="28" rx="10"/><path class="g-w" d="M60 50l6 6 11-12M92 50h24"/></svg></div><div><h3>Press Check message</h3><p>We look for pushy deadlines, requests for money and fake senders. It takes a few seconds.</p></div></li><li><div class="gimg"><svg viewBox="0 0 160 100" role="img" aria-label="Read the answer and follow the steps"><rect class="g-r" x="14" y="8" width="132" height="38" rx="10"/><path class="g-lr" d="M26 21h50"/><rect class="g-bar" x="26" y="32" width="108" height="6" rx="3"/><rect class="g-bf" x="26" y="32" width="96" height="6" rx="3"/><rect class="g-s" x="14" y="54" width="62" height="38" rx="8"/><rect class="g-s" x="84" y="54" width="62" height="38" rx="8"/><path class="g-l" d="M24 66h40M24 76h30M94 66h40M94 76h30"/></svg></div><div><h3>Read the answer and follow the steps</h3><p>You get a plain verdict, the reasons, and what to do next. You can have it read aloud or copy a note for family.</p></div></li></ol>
+    </section>
+
+    <!-- Accessibility -->
+    <section class="card access-view access-only" aria-labelledby="accTitle">
+      <h2 id="accTitle">Make this page easier to read</h2>
+      <p>Your choices are saved on this device.</p>
+      <div class="opt"><h3>Text size</h3><div class="row"><button type="button" data-size="0">Normal</button><button type="button" data-size="1" style="font-size:1.15em">Large</button><button type="button" data-size="2" style="font-size:1.3em">Huge</button></div></div>
+      <div class="opt"><h3>Font</h3><div class="row"><button type="button" data-font="">Easy-read</button><button type="button" data-font="lexend" style="font-family:Lexend,sans-serif">Spaced out</button><button type="button" data-font="serif" style="font-family:Georgia,serif">Classic serif</button></div></div>
+      <div class="opt"><h3>Colors</h3><div class="row">
+        <button type="button" data-pick=""><span class="chips"><u style="background:#FFF8EF"></u><u style="background:#C8400F"></u></span> Scampy orange</button>
+        <button type="button" data-pick="night"><span class="chips"><u style="background:#0E0A0B"></u><u style="background:#FF5A68"></u></span> Night</button>
+        <button type="button" data-pick="ocean"><span class="chips"><u style="background:#F7F9FA"></u><u style="background:#17607F"></u></span> Ocean blue</button>
+        <button type="button" data-pick="contrast"><span class="chips"><u style="background:#fff"></u><u style="background:#000"></u></span> High contrast</button></div></div>
+      <div class="opt"><h3>Motion</h3><div class="row"><button type="button" class="sw" id="rm">Reduce motion</button><button type="button" id="accReset">Reset all</button></div></div>
     </section>
   </div>
 
@@ -93,6 +107,12 @@
 <div class="drop" id="drop" aria-hidden="true">Drop your screenshot here</div>
 <div class="toast" id="toast" role="status"></div>
 
+<!-- Load order matters: config -> mock -> api -> app -->
+<!-- Load order matters: config -> mock -> api -> scampy -> app -->
+<script src="config.js"></script>
+<script src="mock.js"></script>
+<script src="api.js"></script>
+<script src="scampy.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

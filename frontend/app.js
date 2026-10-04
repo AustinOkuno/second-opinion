@@ -1,109 +1,12 @@
 /*
  * Second Opinion – page behavior
  * ------------------------------------------------------------
- * Handles the chat UI. The only code that talks to the backend is the
- * "Backend connector" section right below; the rest calls API.check().
+ * Handles the chat UI. It never talks to the backend directly;
+ * it calls SecondOpinionAPI.check({ text, image }) from api.js.
  */
 (function () {
-  /* ---------- Settings ---------- */
-  var cfg = {
-    // Where the backend (backend/main.py) runs. Start it with: uvicorn main:app --reload
-    API_URL: "http://localhost:8000/check",
-    // Give up waiting after this many milliseconds (the AI can be slow).
-    TIMEOUT_MS: 45000,
-    // Print requests and responses in the browser console (F12).
-    DEBUG: true
-  };
-
-  /* ---------- Backend connector ----------
-   * Request  (POST JSON, matches CheckRequest in backend/models.py):
-   *   { "text": "...", "image": "<base64, no data: prefix>" | null, "media_type": "image/png" }
-   * Response (matches CheckResult):
-   *   { "verdict": "likely_scam" | "suspicious" | "no_red_flags_found" | "cannot_tell",
-   *     "summary": "...", "red_flags": [{ "quote", "why" }], "next_steps": ["..."], "used_ai": bool }
-   */
-  var API = (function () {
-    // Image types the AI can read, and its 5 MB size limit.
-    var IMAGE_TYPES = ["image/png", "image/jpeg", "image/webp", "image/gif"];
-    var MAX_IMAGE_BYTES = 5 * 1024 * 1024;
-
-    function log() { if (cfg.DEBUG) console.log.apply(console, ["[Second Opinion]"].concat([].slice.call(arguments))); }
-
-    function CheckError(kind, detail, status) {
-      this.kind = kind;          // "network" | "timeout" | "server" | "bad-image" | "bad-response"
-      this.detail = detail;
-      this.status = status;
-    }
-
-    function toBase64(f) {
-      return new Promise(function (resolve, reject) {
-        var r = new FileReader();
-        r.onload = function () { resolve(String(r.result).split(",")[1]); };   // drop "data:image/png;base64,"
-        r.onerror = function () { reject(r.error); };
-        r.readAsDataURL(f);
-      });
-    }
-
-    async function check(opts) {
-      var text = opts.text || "", image = opts.image || null;
-      var payload = { text: text, image: null, media_type: "image/png" };
-      if (image) {
-        if (IMAGE_TYPES.indexOf(image.type) < 0 || image.size > MAX_IMAGE_BYTES) throw new CheckError("bad-image");
-        payload.image = await toBase64(image);
-        payload.media_type = image.type;
-      }
-
-      var ctrl = new AbortController();
-      var timer = setTimeout(function () { ctrl.abort(); }, cfg.TIMEOUT_MS);
-      var res;
-      log("POST", cfg.API_URL, { text: text, image: image && image.name });
-      try {
-        res = await fetch(cfg.API_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-          signal: ctrl.signal
-        });
-      } catch (e) {
-        throw new CheckError(e.name === "AbortError" ? "timeout" : "network", String(e));
-      } finally {
-        clearTimeout(timer);
-      }
-
-      if (!res.ok) {
-        var detail = await res.text().catch(function () { return ""; });
-        log("server error", res.status, detail);
-        throw new CheckError("server", detail, res.status);
-      }
-      var data;
-      try { data = await res.json(); } catch (e) { throw new CheckError("bad-response", "Response was not JSON"); }
-      log("response", data);
-      return normalize(data, text);
-    }
-
-    // Backend verdict -> the three looks the page has (scam / suspicious / ok).
-    var VERDICTS = { likely_scam: "scam", suspicious: "suspicious", no_red_flags_found: "ok", cannot_tell: "suspicious" };
-
-    function normalize(d, text) {
-      if (!d || !VERDICTS[d.verdict] || !d.summary) throw new CheckError("bad-response", JSON.stringify(d));
-      var verdict = VERDICTS[d.verdict];
-      var notes = [];
-      if (d.verdict === "cannot_tell") notes.push("We couldn't fully check this message, so treat it with care.");
-      if (!d.used_ai) notes.push("Our AI checker wasn't available, so this answer comes from our basic safety checks only.");
-      return {
-        verdict: verdict,
-        summary: d.summary,
-        sure: verdict === "ok" ? "This is not a guarantee. If it later asks for money or personal details, check again." : "",
-        reasons: (d.red_flags || []).filter(function (r) { return r && (r.quote || r.why); }),
-        steps: d.next_steps || [],
-        note: notes.join(" "),
-        text: text
-      };
-    }
-
-    return { check: check, CheckError: CheckError };
-  })();
-
+  var cfg = window.SO_CONFIG;
+  var API = window.SecondOpinionAPI;
   var $ = function (id) { return document.getElementById(id); };
   var body = document.body, stage = $("stage"), stream = $("stream");
   var msg = $("msg"), form = $("form"), hint = $("hint");
@@ -118,11 +21,20 @@
     });
   }
 
+  /* ---------- Demo-mode badge so the team always knows what's answering ---------- */
+  if (cfg.USE_MOCK) {
+    var badge = document.createElement("span");
+    badge.className = "badge";
+    badge.textContent = "Demo mode";
+    badge.title = "Answers come from the built-in fake checker. Set USE_MOCK to false in config.js to use the backend.";
+    document.querySelector(".brand").appendChild(badge);
+  }
+
   /* ---------- Modes ---------- */
   function setMode(m) {
-    body.classList.toggle("mode-call", m === "call");
+    body.dataset.mode = m; body.classList.toggle("mode-call", m === "call");
     document.querySelectorAll(".seg button").forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.mode === m)); });
-    if (m === "call") updateCall(); else msg.focus({ preventScroll: true });
+    if (m === "chat") msg.focus({ preventScroll: true });
   }
   document.querySelectorAll(".seg button").forEach(function (b) { b.addEventListener("click", function () { setMode(b.dataset.mode); }); });
 
@@ -144,9 +56,9 @@
 
   /* ---------- Rendering ---------- */
   var VERDICT = {
-    scam: { cls: "v-scam", icon: "i-stop", label: "This looks like a scam" },
-    suspicious: { cls: "v-sus", icon: "i-warn", label: "This looks suspicious" },
-    ok: { cls: "v-ok", icon: "i-ok", label: "This looks probably fine" }
+    scam: { cls: "v-scam", icon: "i-stop", label: "Looks like a scam" },
+    suspicious: { cls: "v-sus", icon: "i-warn", label: "Looks suspicious" },
+    ok: { cls: "v-ok", icon: "i-ok", label: "Looks probably fine" }
   };
   // Results replace each other; scroll the newest into view.
   function show(el) {
@@ -156,6 +68,7 @@
   function addThinking() {
     var d = document.createElement("div"); d.className = "thinking";
     d.innerHTML = '<span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>Checking this for you…';
+    if (window.Scampy) Scampy.thinking(d);   // Scampy thinks while we check
     show(d); return d;
   }
 
@@ -181,38 +94,44 @@
 
   function renderResult(a) {
     var v = VERDICT[a.verdict];
+    var L = typeof a.likelihood === "number" ? Math.max(0, Math.min(100, Math.round(a.likelihood))) : ({ scam: 95, suspicious: 50, ok: 5 })[a.verdict];
+    var ic = function (n) { return '<svg aria-hidden="true"><use href="#' + n + '"/></svg>'; };
     var reasons = a.reasons.length
-      ? '<ul class="reasons">' + a.reasons.map(function (r) {
-          return "<li>" + (r.quote ? "<q>" + esc(r.quote) + "</q>" : "") + "<span>" + esc(r.why) + "</span></li>";
+      ? '<ul class="ilist">' + a.reasons.map(function (r) {
+          return '<li class="w">' + ic("i-alert") + "<span>" + (r.quote ? "<q>" + esc(r.quote) + "</q> " : "") + esc(r.why) + "</span></li>";
         }).join("") + "</ul>"
       : '<p class="no-reasons">No pushy deadlines, requests for money, or requests for private details.</p>';
+    var steps = '<ul class="ilist">' + a.steps.map(function (s) { return '<li class="k">' + ic("i-ok") + "<span>" + esc(s) + "</span></li>"; }).join("") + "</ul>";
+    var sigs = (a.signals || []).map(function (g) {
+      return '<div><div class="sig-row"><span>' + esc(g.label) + "</span><span>" + g.pct + '%</span></div><div class="sbar"><i style="width:' + g.pct + '%"></i></div></div>';
+    }).join("");
+    var tags = (a.tags || []).map(function (t) { return "<span>" + esc(t) + "</span>"; }).join("");
     var marked = a.text ? highlight(a.text, a.reasons) : "";
     var el = document.createElement("article"); el.className = "result " + v.cls;
     el.innerHTML = "" +
-      '<div class="verdict"><svg aria-hidden="true"><use href="#' + v.icon + '"/></svg><div>' +
-        '<p class="v-label">' + v.label + "</p>" +
-        '<p class="v-sub">' + esc(a.summary) + "</p>" +
-        (a.sure ? '<p class="v-sure">' + esc(a.sure) + "</p>" : "") + "</div></div>" +
-      '<section class="do"><h3>What to do now</h3><ol>' + a.steps.map(function (s) { return "<li>" + esc(s) + "</li>"; }).join("") + "</ol></section>" +
-      "<section><h3>Why we think so</h3>" + reasons + "</section>" +
-      (marked ? '<details><summary>See your message with the warnings marked</summary><div class="marked">' + marked + "</div></details>" : "") +
-      (a.note ? '<div class="note">' + esc(a.note) + "</div>" : "") +
-      '<div class="actions">' +
+      '<section class="rc summary"><div class="sum-main"><h2 class="sum-title">' + ic(v.icon) + v.label + "</h2>" +
+        '<p class="sum-text">' + esc(a.summary) + "</p>" +
+        '<div class="lk-row"><span>Scam likelihood</span><b>' + L + '%</b></div><div class="bar"><i style="width:' + L + '%"></i></div>' +
+        (a.type ? '<p class="lk-type">Type: <b>' + esc(a.type) + "</b></p>" : "") + "</div></section>" +
+      '<div class="pair"><section class="rc"><h3>Why we think so</h3>' + reasons + '</section><section class="rc"><h3>What to do next</h3>' + steps + "</section></div>" +
+      (sigs || tags ? '<section class="rc">' + (sigs ? '<div class="sigs">' + sigs + "</div>" : "") + (tags ? '<div class="tags">' + tags + "</div>" : "") + "</section>" : "") +
+      (marked ? '<details class="rc"><summary>See your message with the warnings marked</summary><div class="marked">' + marked + "</div></details>" : "") +
+      (a.note ? '<div class="rc tip">' + esc(a.note) + "</div>" : "") +
+      '<div class="rc actions">' +
         '<button type="button" class="ghost" data-act="speak"><svg class="i" aria-hidden="true"><use href="#i-speak"/></svg>Read this to me</button>' +
         '<button type="button" class="ghost" data-act="family"><svg class="i" aria-hidden="true"><use href="#i-people"/></svg>Copy a note for family</button>' +
       "</div>" +
-      (a.verdict !== "ok" ? '<div class="report">Report it so others are protected: <a href="https://reportfraud.ftc.gov" target="_blank" rel="noopener">reportfraud.ftc.gov</a></div>' : "") +
-      "";
+      (a.verdict !== "ok" ? '<div class="rc report">Report it so others are protected: <a href="https://reportfraud.ftc.gov" target="_blank" rel="noopener">reportfraud.ftc.gov</a></div>' : "");
     el._analysis = a;
     show(el);
+    if (window.Scampy) Scampy.verdict(el, a.verdict);
   }
 
   var ERRORS = {
     network: ["We couldn't reach the checker.", "Check your internet connection and try again."],
     timeout: ["This is taking too long.", "The checker didn't answer in time. Please try again."],
     server: ["Something went wrong on our side.", "Please try again in a moment."],
-    "bad-response": ["We got an answer we couldn't read.", "Please try again in a moment."],
-    "bad-image": ["We can't read that picture.", "Please use a PNG, JPG, WEBP, or GIF screenshot smaller than 5 MB."]
+    "bad-response": ["We got an answer we couldn't read.", "Please try again in a moment."]
   };
   function renderError(err, retry) {
     var e = ERRORS[err.kind] || ERRORS.server;
@@ -281,7 +200,7 @@
 
   var drop = $("drop"), depth = 0;
   function hasFiles(e) { return e.dataTransfer && Array.prototype.indexOf.call(e.dataTransfer.types || [], "Files") > -1; }
-  window.addEventListener("dragenter", function (e) { if (hasFiles(e) && !body.classList.contains("mode-call")) { depth++; drop.classList.add("on"); } });
+  window.addEventListener("dragenter", function (e) { if (hasFiles(e) && body.dataset.mode === "chat") { depth++; drop.classList.add("on"); } });
   window.addEventListener("dragleave", function () { depth = Math.max(0, depth - 1); if (!depth) drop.classList.remove("on"); });
   window.addEventListener("dragover", function (e) { e.preventDefault(); });
   window.addEventListener("drop", function (e) {
@@ -327,20 +246,5 @@
   });
 
   /* ---------- Call mode ---------- */
-  var checks = $("checks"), callResult = $("callResult");
-  function updateCall() {
-    var n = checks.querySelectorAll("input:checked").length;
-    if (!n) {
-      callResult.className = "call-result";
-      callResult.innerHTML = "<b>Nothing tapped yet</b><p>Even one of these is a reason to be careful.</p>";
-    } else {
-      callResult.className = "call-result stop";
-      callResult.innerHTML = "<b>Hang up now. It is safe to.</b><p>" +
-        (n >= 2 ? "Real companies and family members do not do these things." : "This is a common scam pattern.") +
-        " Then call the real person or company on a number you already have. Never use a number the caller gave you.</p>";
-    }
-  }
-  checks.addEventListener("change", updateCall);
-  updateCall();
   updateCount();
 })();
