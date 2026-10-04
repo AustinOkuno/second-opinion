@@ -1,6 +1,7 @@
+import base64
+
 from analysis import analyze_message
 from models import CheckResult
-from models import Verdict
 
 
 class ScamDetector:
@@ -10,10 +11,7 @@ class ScamDetector:
         result["reason"] = result["summary"]
         return CheckResult.model_validate(result)
 
-    def detect_image(self, image: bytes, media_type: str) -> CheckResult:
-      # hard-coded CheckResult, like the text fake
-            return CheckResult(
-            verdict=Verdict.SUSPICIOUS,
-            reason="Image analysis not implemented yet",
-            summary="Image analysis not implemented yet",
-        )
+    def detect_image(self, image_bytes: bytes, media_type: str) -> CheckResult:
+        """Used by /check-image (file upload). Turns the file into base64 and runs the same check."""
+        image_b64 = base64.b64encode(image_bytes).decode("ascii")
+        return self.detect("", image_b64, media_type)
