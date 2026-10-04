@@ -55,6 +55,23 @@ RULES = [
      "Pressure to act fast is meant to stop you from thinking it through."),
 ]
 
+# Plain-language scam type for each rule, used when the AI is unavailable.
+CATEGORY_LABELS = {
+    "gift_card": "Gift card scam",
+    "crypto_payment": "Crypto payment scam",
+    "asks_for_secrets": "Phishing for private info",
+    "secrecy": "Secrecy pressure scam",
+    "bail_emergency": "Family emergency scam",
+    "payment_app": "Payment app scam",
+    "account_threat": "Account phishing",
+    "prize": "Prize or lottery scam",
+    "tech_support": "Tech support scam",
+    "short_link": "Suspicious link",
+    "number_link": "Suspicious link",
+    "small_fee": "Fake delivery fee",
+    "urgency": "Pressure tactic",
+}
+
 COMPILED = [(cat, w, re.compile(p, re.IGNORECASE), why) for cat, w, p, why in RULES]
 
 

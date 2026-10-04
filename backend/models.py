@@ -41,4 +41,6 @@ class CheckResult(BaseModel):
     red_flags: list[RedFlag] = []
     evidence: list[EvidenceItem] = []
     next_steps: list[str] = []
+    risk_score: int = 0               # 0-100, always inside the band for its verdict
+    scam_type: str | None = None      # short label, e.g. "Family emergency scam"
     used_ai: bool = False

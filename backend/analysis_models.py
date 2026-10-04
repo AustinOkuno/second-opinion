@@ -28,6 +28,7 @@ class LLMResult(BaseModel):
     summary: str
     red_flags: list[RedFlag] = Field(default_factory=list)
     next_steps: list[str] = Field(default_factory=list)
+    scam_type: str | None = None   # short label, e.g. "Grandparent scam"
 
 
 class RuleResult(BaseModel):
