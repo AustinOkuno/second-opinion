@@ -1,13 +1,14 @@
 /* Second Opinion - config.
- * USE_MOCK: true  = built-in fake checker (no backend needed, good for design work)
- *           false = send every message to API_URL
- * You can also switch from the address bar: index.html?mock=1 or index.html?mock=0
+ * On your laptop it uses the local backend; online it uses the Render backend.
+ * Add ?mock=1 to the address for demo mode (no backend needed).
  */
 window.SO_CONFIG = {
   USE_MOCK: false,
   DEBUG: true,
-  API_URL: "http://localhost:8000/check",
-  TIMEOUT_MS: 45000
+  API_URL: (location.hostname === "localhost" || location.hostname === "127.0.0.1")
+    ? "http://localhost:8000/check"
+    : "https://second-opinion-aa5w.onrender.com/check",
+  TIMEOUT_MS: 70000   // the free server can take up to a minute to wake up
 };
 
 (function () {
