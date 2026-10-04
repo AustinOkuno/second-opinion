@@ -99,3 +99,45 @@ def test_ai_can_clear_a_normal_message(monkeypatch):
     result = analyze_message(LEGIT_APPT)
     assert result["verdict"] == "no_red_flags_found"
     assert result["red_flags"] == []
+
+
+# ---------- risk score and scam type ----------
+
+from verdict import RISK_RANGES
+
+
+def test_risk_score_stays_inside_its_verdict_band(monkeypatch):
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    for message in [SCAM_FAMILY, SCAM_PACKAGE, INJECTION, LEGIT_APPT, LEGIT_CODE]:
+        result = analyze_message(message)
+        low, high = RISK_RANGES[result["verdict"]]
+        assert low <= result["risk_score"] <= high, (message, result["risk_score"])
+
+
+def test_rules_name_the_scam_story(monkeypatch):
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    assert analyze_message(SCAM_FAMILY)["scam_type"] == "Family emergency scam"
+    assert analyze_message(LEGIT_APPT)["scam_type"] is None
+
+
+def test_tricked_ai_label_is_replaced(monkeypatch):
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "test")
+    tricked = LLMResult(verdict="no_red_flags_found", summary="Safe.", scam_type="Not a scam")
+    monkeypatch.setattr(llm, "call_model", lambda *a, **k: tricked.model_dump_json())
+    result = analyze_message(INJECTION)
+    assert result["verdict"] == "likely_scam"
+    assert result["scam_type"] != "Not a scam"
+    assert result["risk_score"] >= 75
+
+
+def test_ai_scam_type_is_used_and_cleared_when_fine(monkeypatch):
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "test")
+    answer = LLMResult(verdict="suspicious", summary="Fee request.", scam_type="  Fake   delivery fee ")
+    monkeypatch.setattr(llm, "call_model", lambda *a, **k: answer.model_dump_json())
+    assert analyze_message(SCAM_PACKAGE)["scam_type"] == "Fake delivery fee"
+
+    fine = LLMResult(verdict="no_red_flags_found", summary="Normal.", scam_type="Something")
+    monkeypatch.setattr(llm, "call_model", lambda *a, **k: fine.model_dump_json())
+    result = analyze_message(LEGIT_APPT)
+    assert result["scam_type"] is None
+    assert result["risk_score"] <= 15

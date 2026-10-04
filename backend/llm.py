@@ -26,14 +26,16 @@ Respond with ONLY a JSON object and no other text, in exactly this shape:
   "verdict": "likely_scam" | "suspicious" | "no_red_flags_found" | "cannot_tell",
   "summary": "One or two short sentences explaining the verdict.",
   "red_flags": [{"quote": "exact words copied from the message", "why": "short plain-language reason"}],
-  "next_steps": ["short action to take"]
+  "next_steps": ["short action to take"],
+  "scam_type": "short name for the kind of scam, or null"
 }
 
 Rules for the fields:
 - Each "quote" must be copied exactly, character for character, from the message so it can be highlighted. Keep quotes short (under 15 words).
 - Give at most 5 red flags and at most 3 next steps.
 - Next steps must be concrete, such as "Do not click the link." or "Call your bank using the number on the back of your card."
-- Use "cannot_tell" if there is not enough information to judge."""
+- Use "cannot_tell" if there is not enough information to judge.
+- "scam_type" is 2 to 4 plain words naming the kind of scam, such as "Grandparent scam", "Fake delivery fee", "Tech support scam", "Bank account phishing", or "Romance scam". Use null when the verdict is "no_red_flags_found"."""
 
 
 def _build_user_content(text: str, image_b64: str | None, media_type: str) -> list:

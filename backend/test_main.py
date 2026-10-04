@@ -28,6 +28,16 @@ def test_valid_message():
     assert body["verdict"] in VALID_VERDICTS
     assert body["reason"] != ""
 
+#the website's percentage bar and scam label come from these two fields
+def test_response_has_risk_score_and_scam_type():
+    response = client.post("/check", json={"text": "Grandma it's me, I've been arrested and need bail money. "
+                                                   "Buy Google Play cards and don't tell mom."})
+    assert response.status_code == 200
+    body = response.json()
+    assert body["verdict"] == "likely_scam"
+    assert 75 <= body["risk_score"] <= 99
+    assert body["scam_type"] == "Family emergency scam"
+
 #empty message tests
 def test_empty_text():
     response = client.post("/check", json={"text": ""})

@@ -273,3 +273,13 @@ img{image-rendering:pixelated}
 .access-view,.guide-view{padding:20px}.greet{left:14px}.bubble{max-width:11rem;font-size:.8rem}
 .vmasc{width:8.5rem;height:8.5rem;margin-inline:auto}}
 .brand svg.logo{width:2.4rem;height:2.4rem}
+/* Scampy size limits (our GIFs are bigger than the original sprites) */
+.greet img { width: 6.5rem; height: auto; }
+.vmasc img { width: auto !important; height: auto; max-width: 8rem; max-height: 8rem; }
+.sil { -webkit-mask-size: contain !important; mask-size: contain !important;
+       -webkit-mask-position: center; mask-position: center; }
+.thinking .sil.run { width: 4.5rem !important; height: 3rem !important; }
+@media (max-width: 720px) {
+  .greet img { width: 4.5rem; }
+  .vmasc img { max-width: 6rem; max-height: 6rem; }
+}
