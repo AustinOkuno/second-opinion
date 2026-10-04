@@ -18,9 +18,11 @@ app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://127.0.0.1:5500", "http://localhost:5500",   # python -m http.server 5500 / VS Code Live Server
+        "http://127.0.0.1:5500", "http://localhost:5500",   # local frontend
         "http://127.0.0.1:5173", "http://localhost:5173",   # Vite
     ],
+    # Any Render site whose name starts with "second-opinion" (your frontend)
+    allow_origin_regex=r"https://second-opinion[a-z0-9-]*\.onrender\.com",
     allow_methods=["GET", "POST"],
     allow_headers=["Content-Type"],
 )
